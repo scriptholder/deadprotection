@@ -19,10 +19,11 @@ export const APP_CONFIG = {
     ogImage: 'https://lovable.dev/opengraph-image-p98pqg.png',
   },
 
-  // ===== FEATURES =====
-  features: {
-    // Set to false to disable CAPTCHA entirely
-    enableCaptcha: true,
+  // ===== INTEGRATIONS =====
+  integrations: {
+    // Cloudflare Turnstile CAPTCHA - get your keys at https://dash.cloudflare.com/turnstile
+    // Leave empty to disable CAPTCHA
+    turnstileSiteKey: '',
   },
 
   // ===== FOOTER =====

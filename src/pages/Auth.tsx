@@ -25,8 +25,10 @@ export default function Auth() {
   const [errors, setErrors] = useState<{ email?: string; password?: string }>({});
   const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
   const [captchaError, setCaptchaError] = useState(false);
-  const [turnstileSiteKey, setTurnstileSiteKey] = useState<string | null>(null);
   const turnstileRef = useRef<{ reset: () => void } | null>(null);
+  
+  // Get site key from config - empty string means CAPTCHA is disabled
+  const turnstileSiteKey = APP_CONFIG.integrations.turnstileSiteKey || null;
 
   const { signIn, signUp, user, loading } = useAuth();
   const navigate = useNavigate();
@@ -38,20 +40,6 @@ export default function Auth() {
     }
   }, [user, loading, navigate]);
 
-  // Fetch Turnstile site key on mount
-  useEffect(() => {
-    const fetchSiteKey = async () => {
-      try {
-        const { data, error } = await supabase.functions.invoke('get-turnstile-key');
-        if (!error && data?.siteKey) {
-          setTurnstileSiteKey(data.siteKey);
-        }
-      } catch (err) {
-        console.error('Failed to fetch turnstile key:', err);
-      }
-    };
-    fetchSiteKey();
-  }, []);
 
   const validate = () => {
     const newErrors: { email?: string; password?: string } = {};
