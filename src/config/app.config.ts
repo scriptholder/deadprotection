@@ -7,15 +7,15 @@
 
 export const APP_CONFIG = {
   // ===== BRANDING =====
-  name: 'ScriptGuard',
+  name: 'Dead Protection',
   tagline: 'Protect Your Scripts',
   description: 'Advanced Lua script protection and distribution platform. Keep your code safe from leaks with our powerful whitelist system.',
   
   // ===== METADATA (SEO) =====
   meta: {
-    title: 'ScriptGuard - Lua Script Protection Platform',
+    title: 'Dead Protection - Lua Script Protection Platform',
     description: 'Advanced Lua script protection and distribution platform. Keep your code safe from leaks with our powerful whitelist system.',
-    author: 'ScriptGuard',
+    author: 'Dead Protection',
     ogImage: 'https://lovable.dev/opengraph-image-p98pqg.png',
   },
 
