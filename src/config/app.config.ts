@@ -23,7 +23,7 @@ export const APP_CONFIG = {
   integrations: {
     // Cloudflare Turnstile CAPTCHA - get your keys at https://dash.cloudflare.com/turnstile
     // Leave empty to disable CAPTCHA
-    turnstileSiteKey: '',
+    turnstileSiteKey: '0x4AAAAAACK-5Gh3_UZCCOcv',
   },
 
   // ===== FOOTER =====
