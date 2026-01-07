@@ -2,7 +2,8 @@ import { useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
-import { Shield, Code, Users, Zap, Lock, ArrowRight, Loader2 } from 'lucide-react';
+import { Shield, Users, Zap, Lock, ArrowRight, Loader2 } from 'lucide-react';
+import { APP_CONFIG } from '@/config/app.config';
 
 export default function Index() {
   const { user, loading } = useAuth();
@@ -30,14 +31,13 @@ export default function Index() {
         <div className="absolute -bottom-1/2 -right-1/4 w-[600px] h-[600px] bg-accent/10 rounded-full blur-3xl" />
       </div>
 
-      {/* Header */}
       <header className="relative z-10 border-b border-border/50 bg-card/30 backdrop-blur-xl">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 bg-gradient-primary rounded-lg flex items-center justify-center glow-primary">
               <Shield className="h-5 w-5 text-primary-foreground" />
             </div>
-            <span className="text-xl font-bold">ScriptGuard</span>
+            <span className="text-xl font-bold">{APP_CONFIG.name}</span>
           </div>
 
           <Link to="/auth">
@@ -49,14 +49,13 @@ export default function Index() {
         </div>
       </header>
 
-      {/* Hero Section */}
       <section className="relative z-10 container mx-auto px-4 py-24 text-center">
         <div className="max-w-3xl mx-auto">
           <h1 className="text-5xl md:text-6xl font-bold mb-6">
-            <span className="text-gradient-primary">Protect</span> Your Scripts
+            <span className="text-gradient-primary">{APP_CONFIG.landing.hero.title}</span> {APP_CONFIG.landing.hero.titleHighlight}
           </h1>
           <p className="text-xl text-muted-foreground mb-8 max-w-2xl mx-auto">
-            Advanced Lua script protection and distribution platform. Keep your code safe from leaks with our powerful whitelist system.
+            {APP_CONFIG.landing.hero.subtitle}
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Link to="/auth">
@@ -64,12 +63,12 @@ export default function Index() {
                 size="lg"
                 className="bg-gradient-primary hover:opacity-90 text-primary-foreground px-8"
               >
-                Start Protecting
+                {APP_CONFIG.landing.hero.primaryCta}
                 <Shield className="h-5 w-5 ml-2" />
               </Button>
             </Link>
             <Button size="lg" variant="outline" className="border-border/50">
-              Learn More
+              {APP_CONFIG.landing.hero.secondaryCta}
             </Button>
           </div>
         </div>
@@ -110,35 +109,33 @@ export default function Index() {
         </div>
       </section>
 
-      {/* CTA Section */}
       <section className="relative z-10 container mx-auto px-4 py-16">
         <div className="bg-gradient-to-r from-primary/20 to-accent/20 border border-border/50 rounded-2xl p-12 text-center">
-          <h2 className="text-3xl font-bold mb-4">Ready to protect your scripts?</h2>
+          <h2 className="text-3xl font-bold mb-4">{APP_CONFIG.landing.cta.title}</h2>
           <p className="text-muted-foreground mb-8 max-w-xl mx-auto">
-            Join developers who trust ScriptGuard to keep their code secure.
+            {APP_CONFIG.landing.cta.subtitle}
           </p>
           <Link to="/auth">
             <Button
               size="lg"
               className="bg-gradient-primary hover:opacity-90 text-primary-foreground px-8"
             >
-              Create Free Account
+              {APP_CONFIG.landing.cta.buttonText}
               <ArrowRight className="h-5 w-5 ml-2" />
             </Button>
           </Link>
         </div>
       </section>
 
-      {/* Footer */}
       <footer className="relative z-10 border-t border-border/50 bg-card/30 backdrop-blur-xl mt-16">
         <div className="container mx-auto px-4 py-8">
           <div className="flex flex-col md:flex-row items-center justify-between gap-4">
             <div className="flex items-center gap-3">
               <Shield className="h-5 w-5 text-primary" />
-              <span className="font-semibold">ScriptGuard</span>
+              <span className="font-semibold">{APP_CONFIG.name}</span>
             </div>
             <p className="text-sm text-muted-foreground">
-              © 2024 ScriptGuard. All rights reserved.
+              {APP_CONFIG.footer.copyright}
             </p>
           </div>
         </div>

@@ -8,7 +8,8 @@ import { Label } from '@/components/ui/label';
 import { Shield, Eye, EyeOff, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { z } from 'zod';
-import Turnstile, { BoundTurnstileObject } from 'react-turnstile';
+import Turnstile from 'react-turnstile';
+import { APP_CONFIG } from '@/config/app.config';
 import { supabase } from '@/integrations/supabase/client';
 
 const emailSchema = z.string().email('Invalid email address');
@@ -25,7 +26,7 @@ export default function Auth() {
   const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
   const [captchaError, setCaptchaError] = useState(false);
   const [turnstileSiteKey, setTurnstileSiteKey] = useState<string | null>(null);
-  const boundTurnstileRef = useRef<BoundTurnstileObject | null>(null);
+  const turnstileRef = useRef<{ reset: () => void } | null>(null);
 
   const { signIn, signUp, user, loading } = useAuth();
   const navigate = useNavigate();
@@ -114,7 +115,7 @@ export default function Auth() {
         });
         setTurnstileToken(null);
         setCaptchaError(true);
-        boundTurnstileRef.current?.reset();
+        turnstileRef.current?.reset();
         setIsSubmitting(false);
         return;
       }
@@ -137,9 +138,8 @@ export default function Auth() {
               variant: 'destructive',
             });
           }
-          // Reset captcha on failed login
           setTurnstileToken(null);
-          boundTurnstileRef.current?.reset();
+          turnstileRef.current?.reset();
         } else {
           toast({
             title: 'Welcome back!',
@@ -162,9 +162,8 @@ export default function Auth() {
               variant: 'destructive',
             });
           }
-          // Reset captcha on failed signup
           setTurnstileToken(null);
-          boundTurnstileRef.current?.reset();
+          turnstileRef.current?.reset();
         } else {
           toast({
             title: 'Account created!',
@@ -177,10 +176,9 @@ export default function Auth() {
     }
   };
 
-  const handleTurnstileVerify = (token: string, preClearanceObtained: boolean, boundTurnstile: BoundTurnstileObject) => {
+  const handleTurnstileVerify = (token: string) => {
     setTurnstileToken(token);
     setCaptchaError(false);
-    boundTurnstileRef.current = boundTurnstile;
   };
 
   const handleTurnstileError = () => {
@@ -323,7 +321,7 @@ export default function Auth() {
                 setIsLogin(!isLogin);
                 setErrors({});
                 setTurnstileToken(null);
-                boundTurnstileRef.current?.reset();
+                turnstileRef.current?.reset();
               }}
               className="text-sm text-muted-foreground hover:text-primary transition-colors"
             >
