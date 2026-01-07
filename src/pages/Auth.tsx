@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
@@ -8,6 +8,8 @@ import { Label } from '@/components/ui/label';
 import { Shield, Eye, EyeOff, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { z } from 'zod';
+import Turnstile, { BoundTurnstileObject } from 'react-turnstile';
+import { supabase } from '@/integrations/supabase/client';
 
 const emailSchema = z.string().email('Invalid email address');
 const passwordSchema = z.string().min(6, 'Password must be at least 6 characters');
@@ -20,6 +22,10 @@ export default function Auth() {
   const [showPassword, setShowPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errors, setErrors] = useState<{ email?: string; password?: string }>({});
+  const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
+  const [captchaError, setCaptchaError] = useState(false);
+  const [turnstileSiteKey, setTurnstileSiteKey] = useState<string | null>(null);
+  const boundTurnstileRef = useRef<BoundTurnstileObject | null>(null);
 
   const { signIn, signUp, user, loading } = useAuth();
   const navigate = useNavigate();
@@ -30,6 +36,21 @@ export default function Auth() {
       navigate('/dashboard');
     }
   }, [user, loading, navigate]);
+
+  // Fetch Turnstile site key on mount
+  useEffect(() => {
+    const fetchSiteKey = async () => {
+      try {
+        const { data, error } = await supabase.functions.invoke('get-turnstile-key');
+        if (!error && data?.siteKey) {
+          setTurnstileSiteKey(data.siteKey);
+        }
+      } catch (err) {
+        console.error('Failed to fetch turnstile key:', err);
+      }
+    };
+    fetchSiteKey();
+  }, []);
 
   const validate = () => {
     const newErrors: { email?: string; password?: string } = {};
@@ -48,12 +69,56 @@ export default function Auth() {
     return Object.keys(newErrors).length === 0;
   };
 
+  const verifyTurnstile = async (token: string): Promise<boolean> => {
+    try {
+      const { data, error } = await supabase.functions.invoke('verify-turnstile', {
+        body: { token },
+      });
+
+      if (error) {
+        console.error('Turnstile verification error:', error);
+        return false;
+      }
+
+      return data?.success === true;
+    } catch (err) {
+      console.error('Turnstile verification failed:', err);
+      return false;
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (!validate()) return;
+
+    if (turnstileSiteKey && !turnstileToken) {
+      toast({
+        title: 'Verification required',
+        description: 'Please complete the CAPTCHA verification',
+        variant: 'destructive',
+      });
+      return;
+    }
     
     setIsSubmitting(true);
+
+    // Verify turnstile token server-side if enabled
+    if (turnstileToken) {
+      const isValidCaptcha = await verifyTurnstile(turnstileToken);
+      if (!isValidCaptcha) {
+        toast({
+          title: 'Verification failed',
+          description: 'CAPTCHA verification failed. Please try again.',
+          variant: 'destructive',
+        });
+        setTurnstileToken(null);
+        setCaptchaError(true);
+        boundTurnstileRef.current?.reset();
+        setIsSubmitting(false);
+        return;
+      }
+    }
     
     try {
       if (isLogin) {
@@ -72,6 +137,9 @@ export default function Auth() {
               variant: 'destructive',
             });
           }
+          // Reset captcha on failed login
+          setTurnstileToken(null);
+          boundTurnstileRef.current?.reset();
         } else {
           toast({
             title: 'Welcome back!',
@@ -94,6 +162,9 @@ export default function Auth() {
               variant: 'destructive',
             });
           }
+          // Reset captcha on failed signup
+          setTurnstileToken(null);
+          boundTurnstileRef.current?.reset();
         } else {
           toast({
             title: 'Account created!',
@@ -104,6 +175,21 @@ export default function Auth() {
     } finally {
       setIsSubmitting(false);
     }
+  };
+
+  const handleTurnstileVerify = (token: string, preClearanceObtained: boolean, boundTurnstile: BoundTurnstileObject) => {
+    setTurnstileToken(token);
+    setCaptchaError(false);
+    boundTurnstileRef.current = boundTurnstile;
+  };
+
+  const handleTurnstileError = () => {
+    setTurnstileToken(null);
+    setCaptchaError(true);
+  };
+
+  const handleTurnstileExpire = () => {
+    setTurnstileToken(null);
   };
 
   if (loading) {
@@ -199,10 +285,29 @@ export default function Auth() {
               )}
             </div>
 
+            {/* Cloudflare Turnstile CAPTCHA */}
+            {turnstileSiteKey && (
+              <div className="flex justify-center">
+                <Turnstile
+                  sitekey={turnstileSiteKey}
+                  onSuccess={handleTurnstileVerify}
+                  onError={handleTurnstileError}
+                  onExpire={handleTurnstileExpire}
+                  theme="dark"
+                  className="mx-auto"
+                />
+              </div>
+            )}
+            {captchaError && (
+              <p className="text-sm text-destructive text-center">
+                CAPTCHA verification failed. Please try again.
+              </p>
+            )}
+
             <Button
               type="submit"
               className="w-full bg-gradient-primary hover:opacity-90 text-primary-foreground font-semibold"
-              disabled={isSubmitting}
+              disabled={isSubmitting || (turnstileSiteKey && !turnstileToken)}
             >
               {isSubmitting ? (
                 <Loader2 className="h-4 w-4 animate-spin mr-2" />
@@ -217,6 +322,8 @@ export default function Auth() {
               onClick={() => {
                 setIsLogin(!isLogin);
                 setErrors({});
+                setTurnstileToken(null);
+                boundTurnstileRef.current?.reset();
               }}
               className="text-sm text-muted-foreground hover:text-primary transition-colors"
             >

@@ -22,9 +22,12 @@ import {
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import ScriptDetailDialog from './ScriptDetailDialog';
+import EditScriptDialog from './EditScriptDialog';
 import type { Database } from '@/integrations/supabase/types';
 
 type Script = Database['public']['Tables']['scripts']['Row'];
+
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
 
 interface ScriptListProps {
   scripts: Script[];
@@ -34,6 +37,7 @@ interface ScriptListProps {
 
 export default function ScriptList({ scripts, loading, onRefresh }: ScriptListProps) {
   const [selectedScript, setSelectedScript] = useState<Script | null>(null);
+  const [editingScript, setEditingScript] = useState<Script | null>(null);
   const [deleting, setDeleting] = useState<string | null>(null);
   const { toast } = useToast();
 
@@ -58,7 +62,7 @@ export default function ScriptList({ scripts, loading, onRefresh }: ScriptListPr
   };
 
   const handleCopyLoader = (script: Script) => {
-    const loaderCode = `loadstring(game:HttpGet("https://your-domain.com/api/load/${script.id}"))()`;
+    const loaderCode = `loadstring(game:HttpGet("${SUPABASE_URL}/functions/v1/script-loader/${script.id}"))()`;
     navigator.clipboard.writeText(loaderCode);
     toast({
       title: 'Copied!',
@@ -127,6 +131,13 @@ export default function ScriptList({ scripts, loading, onRefresh }: ScriptListPr
                     </DropdownMenuItem>
                     <DropdownMenuItem onClick={(e) => {
                       e.stopPropagation();
+                      setEditingScript(script);
+                    }}>
+                      <Edit className="h-4 w-4 mr-2" />
+                      Edit Script
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={(e) => {
+                      e.stopPropagation();
                       handleCopyLoader(script);
                     }}>
                       <Copy className="h-4 w-4 mr-2" />
@@ -175,6 +186,13 @@ export default function ScriptList({ scripts, loading, onRefresh }: ScriptListPr
         script={selectedScript}
         onClose={() => setSelectedScript(null)}
         onRefresh={onRefresh}
+      />
+
+      <EditScriptDialog
+        script={editingScript}
+        open={!!editingScript}
+        onClose={() => setEditingScript(null)}
+        onSaved={onRefresh}
       />
     </>
   );
