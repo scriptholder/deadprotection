@@ -36,6 +36,8 @@ type WhitelistEntry = Database['public']['Tables']['whitelist_entries']['Row'];
 type AccessTier = Database['public']['Enums']['access_tier'];
 type AccessDuration = Database['public']['Enums']['access_duration'];
 
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
+
 interface ScriptDetailDialogProps {
   script: Script | null;
   onClose: () => void;
@@ -153,7 +155,7 @@ export default function ScriptDetailDialog({
 
   const handleCopyLoader = () => {
     if (!script) return;
-    const loaderCode = `loadstring(game:HttpGet("https://your-domain.com/api/load/${script.id}"))()`;
+    const loaderCode = `loadstring(game:HttpGet("${SUPABASE_URL}/functions/v1/script-loader/${script.id}"))()`;
     navigator.clipboard.writeText(loaderCode);
     toast({
       title: 'Copied!',
@@ -317,7 +319,7 @@ export default function ScriptDetailDialog({
                 </Button>
               </div>
               <pre className="p-4 bg-muted/30 rounded-lg font-mono text-sm overflow-x-auto">
-                {`loadstring(game:HttpGet("https://your-domain.com/api/load/${script.id}"))()`}
+                {`loadstring(game:HttpGet("${SUPABASE_URL}/functions/v1/script-loader/${script.id}"))()`}
               </pre>
             </div>
             <div className="space-y-2">
