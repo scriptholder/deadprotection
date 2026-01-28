@@ -11,6 +11,7 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Switch } from '@/components/ui/switch';
 import {
   Select,
   SelectContent,
@@ -26,9 +27,14 @@ import {
   Users,
   Code,
   Activity,
+  Download,
+  Palette,
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import ThemeColorPicker, { type ThemeColors } from './ThemeColorPicker';
+import AsciiArtPreview from './AsciiArtPreview';
+import { generateLoaderScript, downloadLuaFile } from '@/lib/lua-generator';
 import type { Database } from '@/integrations/supabase/types';
 
 type Script = Database['public']['Tables']['scripts']['Row'];
@@ -59,6 +65,10 @@ export default function ScriptDetailDialog({
   const [robloxId, setRobloxId] = useState('');
   const [entryTier, setEntryTier] = useState<AccessTier>('standard');
   const [duration, setDuration] = useState<AccessDuration>('unlimited');
+
+  // Theme customization
+  const [themeColor, setThemeColor] = useState<ThemeColors>({ r: 147, g: 51, b: 234 });
+  const [showAsciiArt, setShowAsciiArt] = useState(true);
 
   useEffect(() => {
     if (script) {
@@ -163,6 +173,22 @@ export default function ScriptDetailDialog({
     });
   };
 
+  const handleDownloadLua = () => {
+    if (!script) return;
+    const loaderContent = generateLoaderScript({
+      scriptName: script.name,
+      scriptId: script.id,
+      supabaseUrl: SUPABASE_URL,
+      themeColor,
+      showAsciiArt,
+    });
+    downloadLuaFile(loaderContent, `${script.name.replace(/\s+/g, '_')}_loader.lua`);
+    toast({
+      title: 'Downloaded!',
+      description: 'Lua loader file downloaded',
+    });
+  };
+
   if (!script) return null;
 
   return (
@@ -182,7 +208,7 @@ export default function ScriptDetailDialog({
         </DialogHeader>
 
         <Tabs defaultValue="whitelist" className="flex-1 overflow-hidden flex flex-col">
-          <TabsList className="grid w-full grid-cols-3">
+          <TabsList className="grid w-full grid-cols-4">
             <TabsTrigger value="whitelist" className="gap-2">
               <Users className="h-4 w-4" />
               Whitelist
@@ -190,6 +216,10 @@ export default function ScriptDetailDialog({
             <TabsTrigger value="code" className="gap-2">
               <Code className="h-4 w-4" />
               Code
+            </TabsTrigger>
+            <TabsTrigger value="loader" className="gap-2">
+              <Download className="h-4 w-4" />
+              Loader
             </TabsTrigger>
             <TabsTrigger value="stats" className="gap-2">
               <Activity className="h-4 w-4" />
@@ -327,6 +357,56 @@ export default function ScriptDetailDialog({
               <pre className="p-4 bg-muted/30 rounded-lg font-mono text-sm overflow-x-auto max-h-[300px]">
                 {script.script_content}
               </pre>
+            </div>
+          </TabsContent>
+
+          <TabsContent value="loader" className="flex-1 overflow-auto space-y-4">
+            <div className="space-y-4 p-4 bg-muted/30 rounded-lg">
+              <div className="space-y-2">
+                <Label className="text-base font-semibold flex items-center gap-2">
+                  <Palette className="h-4 w-4" />
+                  Loader Customization
+                </Label>
+                <p className="text-sm text-muted-foreground">
+                  Customize the look and feel of your script loader
+                </p>
+              </div>
+
+              <ThemeColorPicker value={themeColor} onChange={setThemeColor} />
+
+              <div className="flex items-center justify-between py-2">
+                <div className="space-y-0.5">
+                  <Label>ASCII Art Logo</Label>
+                  <p className="text-xs text-muted-foreground">
+                    Display script name as ASCII art in the loader
+                  </p>
+                </div>
+                <Switch checked={showAsciiArt} onCheckedChange={setShowAsciiArt} />
+              </div>
+
+              {showAsciiArt && (
+                <div className="space-y-2">
+                  <Label className="text-sm">Preview</Label>
+                  <AsciiArtPreview 
+                    text={script.name} 
+                    color={`rgb(${themeColor.r}, ${themeColor.g}, ${themeColor.b})`}
+                  />
+                </div>
+              )}
+            </div>
+
+            <div className="flex gap-3">
+              <Button
+                onClick={handleDownloadLua}
+                className="flex-1 bg-gradient-primary hover:opacity-90"
+              >
+                <Download className="h-4 w-4 mr-2" />
+                Download .lua Loader
+              </Button>
+              <Button variant="outline" onClick={handleCopyLoader}>
+                <Copy className="h-4 w-4 mr-2" />
+                Copy Simple Loader
+              </Button>
             </div>
           </TabsContent>
 
