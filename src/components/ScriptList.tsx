@@ -12,17 +12,20 @@ import {
   Eye,
   Copy,
   Loader2,
+  Download,
 } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
+  DropdownMenuSeparator,
 } from '@/components/ui/dropdown-menu';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import ScriptDetailDialog from './ScriptDetailDialog';
 import EditScriptDialog from './EditScriptDialog';
+import { generateLoaderScript, downloadLuaFile } from '@/lib/lua-generator';
 import type { Database } from '@/integrations/supabase/types';
 
 type Script = Database['public']['Tables']['scripts']['Row'];
@@ -67,6 +70,21 @@ export default function ScriptList({ scripts, loading, onRefresh }: ScriptListPr
     toast({
       title: 'Copied!',
       description: 'Loader script copied to clipboard',
+    });
+  };
+
+  const handleDownloadLua = (script: Script) => {
+    const loaderContent = generateLoaderScript({
+      scriptName: script.name,
+      scriptId: script.id,
+      supabaseUrl: SUPABASE_URL,
+      themeColor: { r: 147, g: 51, b: 234 },
+      showAsciiArt: true,
+    });
+    downloadLuaFile(loaderContent, `${script.name.replace(/\s+/g, '_')}_loader.lua`);
+    toast({
+      title: 'Downloaded!',
+      description: 'Lua loader file downloaded',
     });
   };
 
@@ -143,6 +161,14 @@ export default function ScriptList({ scripts, loading, onRefresh }: ScriptListPr
                       <Copy className="h-4 w-4 mr-2" />
                       Copy Loader
                     </DropdownMenuItem>
+                    <DropdownMenuItem onClick={(e) => {
+                      e.stopPropagation();
+                      handleDownloadLua(script);
+                    }}>
+                      <Download className="h-4 w-4 mr-2" />
+                      Download .lua
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
                     <DropdownMenuItem
                       onClick={(e) => {
                         e.stopPropagation();
